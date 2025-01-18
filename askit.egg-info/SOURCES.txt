@@ -1,7 +1,16 @@
 README.md
 setup.py
+askit/__init__.py
+askit/askit.py
 askit.egg-info/PKG-INFO
 askit.egg-info/SOURCES.txt
 askit.egg-info/dependency_links.txt
 askit.egg-info/requires.txt
 askit.egg-info/top_level.txt
+askit/plugins/__init__.py
+askit/plugins/files.py
+askit/plugins/get_current_time.py
+askit/plugins/get_current_weather.py
+askit/plugins/get_stock_price.py
+askit/plugins/search_internet.py
+askit/plugins/visit_webpage.py
