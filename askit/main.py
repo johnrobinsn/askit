@@ -43,6 +43,7 @@ def load_plugins(plugin_dir):
     for file in os.listdir(plugin_dir):
         if file.endswith(".py") and file != "__init__.py":
             module_name = f"askit.{plugin_dir}.{file[:-3]}"
+            print('module_name:', module_name)
             module = importlib.import_module(module_name)
             if hasattr(module, "register"):
                 plugins.append(module)
