@@ -42,7 +42,7 @@ def load_plugins(plugin_dir):
     plugins = []
     for file in os.listdir(plugin_dir):
         if file.endswith(".py") and file != "__init__.py":
-            module_name = f"askit.{plugin_dir}.{file[:-3]}"
+            module_name = f"askit.plugins.{file[:-3]}"
             print('module_name:', module_name)
             module = importlib.import_module(module_name)
             if hasattr(module, "register"):
@@ -221,5 +221,5 @@ def main():
 
     asyncio.run(read_lines())
 
-    if __name__ == '__main__':
-        main()
+if __name__ == '__main__':
+    main()
