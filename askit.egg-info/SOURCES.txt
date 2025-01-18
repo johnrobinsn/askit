@@ -1,10 +1,11 @@
 README.md
 setup.py
 askit/__init__.py
-askit/askit.py
+askit/main.py
 askit.egg-info/PKG-INFO
 askit.egg-info/SOURCES.txt
 askit.egg-info/dependency_links.txt
+askit.egg-info/entry_points.txt
 askit.egg-info/requires.txt
 askit.egg-info/top_level.txt
 askit/plugins/__init__.py
