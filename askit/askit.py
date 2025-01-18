@@ -177,7 +177,7 @@ class AskIt():
         # })
         return response_message.content
 
-if __name__ == '__main__':
+def main():
     load_dotenv(".env.local")
 
     # askit = AskIt([get_current_weather,get_current_time])
@@ -216,3 +216,6 @@ if __name__ == '__main__':
                 await test(line.strip())
 
     asyncio.run(read_lines())
+
+    if __name__ == '__main__':
+        main()
