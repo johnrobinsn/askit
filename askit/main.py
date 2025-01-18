@@ -77,7 +77,7 @@ print('plugins: ', plugins)
 plugin_dict = {plugin.__name__: plugin for plugin in plugins}
 
 class AskIt():
-    def __init__(self,tools, prompt=None):
+    def __init__(self,prompt=None):
         # super().__init__()
         openai_api_key = os.getenv('OPENAI_API_KEY')
         # print('openai_api_key:', openai_api_key)        
@@ -96,7 +96,7 @@ class AskIt():
         if prompt:
             self.initial_prompt = prompt
 
-        self.tools = tools
+        self.tools = plugins
 
     async def appendMessage(self,m):
         self.prompt_messages.append(m)
@@ -185,7 +185,7 @@ def main():
     load_dotenv(".env.local")
 
     # askit = AskIt([get_current_weather,get_current_time])
-    askit = AskIt(plugins)
+    askit = AskIt()
 
     # async def test(prompt):
     #     print(prompt)    
