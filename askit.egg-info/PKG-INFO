@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: askit
+Version: 0.1
+Summary: A module to ask any one question and get an answer.
+Author: John Robinson
+Author-email: johnrobinsn@gmail.com
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: aiohttp
+Requires-Dist: python-dotenv
+Requires-Dist: openai
+Requires-Dist: smolagents
+Requires-Dist: markdownify
+Requires-Dist: duckduckgo-search
+
+blah

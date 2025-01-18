@@ -1,0 +1,7 @@
+README.md
+setup.py
+askit.egg-info/PKG-INFO
+askit.egg-info/SOURCES.txt
+askit.egg-info/dependency_links.txt
+askit.egg-info/requires.txt
+askit.egg-info/top_level.txt

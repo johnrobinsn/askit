@@ -1,0 +1,6 @@
+aiohttp
+python-dotenv
+openai
+smolagents
+markdownify
+duckduckgo-search
