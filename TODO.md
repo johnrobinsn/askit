@@ -1,0 +1,4 @@
+-[ ] Sandbox eval
+-[ ] Catch exceptions
+-[ ] Support for plugins that need to run in the background (websockets, timers, alarms)
+-[ ] Long running task (browser use...) notifications when done... 
