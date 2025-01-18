@@ -12,11 +12,11 @@ setup(
         'markdownify',
         'duckduckgo-search',
     ],
-    # entry_points={
-    #     'console_scripts': [
-    #         'get_current_weather=your_module.get_current_weather:main',
-    #     ],
-    # },
+    entry_points={
+        'console_scripts': [
+            'get_current_weather=askit.main:main',
+        ],
+    },
     author='John Robinson',
     author_email='johnrobinsn@gmail.com',
     description='A module to ask any one question and get an answer.',
