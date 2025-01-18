@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='askit',
     version='0.1',
-    packages=find_packages(),
+    packages=find_packages(include=['askit', 'askit.*']),
     install_requires=[
         'aiohttp',
         'python-dotenv',
