@@ -33,7 +33,10 @@ from inspect import Parameter
 
 import importlib
 
-PLUGIN_DIR = "plugins"
+
+path = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(path, 'plugins')
+PLUGIN_DIR = path
 
 def load_plugins(plugin_dir):
     plugins = []
