@@ -83,7 +83,6 @@ class AskIt():
         # print('openai_api_key:', openai_api_key)        
         self.client = AsyncOpenAI(api_key=openai_api_key)
         self.name = 'OpenAI'
-        self.prompt_messages = []
         self.initial_prompt = {
                 "role": "system",
                 "content": [
@@ -98,27 +97,28 @@ class AskIt():
 
         self.tools = plugins
 
-    async def appendMessage(self,m):
-        self.prompt_messages.append(m)
-
-    async def prompt(self,t):
-        await self.appendMessage(self.initial_prompt)
-        await self.appendMessage({
+    async def prompt1(self,text):
+        messages = []
+        messages.append(self.initial_prompt)
+        messages.append({
                 "role": "user",
                 "content": [
                     {
                         "type": "text",
-                        "text": t
+                        "text": text
                     },
                 ],
             })
+        return await self.prompt(messages)
 
+    async def prompt(self,messages):
+        msgs = messages.copy()
         tool_schemas = [schema(tool) for tool in self.tools]      
 
         start = datetime.now()
         response = await self.client.chat.completions.create(
             model="gpt-4-1106-preview",
-            messages=self.prompt_messages,
+            messages=msgs,
             tools=tool_schemas,
         )
         log.debug('Time for LLM Response: %d', (datetime.now()-start).total_seconds())
@@ -138,7 +138,7 @@ class AskIt():
             # print('xx:', response_message)
             # print('yy:', response_message.__dict__)
             #await appendMessage(response_message)
-            self.prompt_messages.append(response_message)
+            msgs.append(response_message)
             # Step 4: send the info for each function call and function response to the model
             for tool_call in tool_calls:
                 # print("Calling tools")
@@ -152,7 +152,7 @@ class AskIt():
                     **function_args
                 )
                 # if function_response:
-                await self.appendMessage(
+                msgs.append(
                     {
                         "tool_call_id": tool_call.id,
                         "role": "tool",
@@ -165,7 +165,7 @@ class AskIt():
             # TODO better model?
             response = await self.client.chat.completions.create(
                 model="gpt-4-1106-preview",
-                messages=self.prompt_messages,
+                messages=msgs,
             )  # get a new response from the model where it can see the function response
             # print('second call response:', response)
             log.debug('Time for llm tool processing: %d', (datetime.now()-start).total_seconds())
@@ -212,7 +212,7 @@ def main():
 
     async def test(prompt):
         print(prompt)
-        print(await askit.prompt(prompt))
+        print(await askit.prompt1(prompt))
 
     async def read_lines():
         async with aiofiles.open('/dev/stdin', mode='r') as f:
