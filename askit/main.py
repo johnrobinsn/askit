@@ -12,27 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-import logging
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
-
-from datetime import datetime
-# import json
 import os
-# import copy
-
-from openai import AsyncOpenAI
-from dotenv import load_dotenv
-
-logging.getLogger("httpx").setLevel(logging.CRITICAL)
-
-from pydantic import create_model
-import inspect, json
-from inspect import Parameter
-
 import importlib
 
+from datetime import datetime
+
+import inspect, json
+from collections import defaultdict
+from inspect import Parameter
+from pydantic import create_model
+
+from dotenv import load_dotenv
+
+import asyncio
+from openai import AsyncOpenAI
+
+import logging
+
+logging.getLogger("httpx").setLevel(logging.CRITICAL)
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
 
 path = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(path, 'plugins')
@@ -55,9 +54,6 @@ def schema(f):
     s = create_model(f'Input for `{f.__name__}`', **kw).model_json_schema()
     return dict(type='function',function=dict(name=f.__name__, description=f.__doc__, parameters=s))
 
-# print('schema:', json.dumps(schema(get_current_weather), indent=4))
-# def main():
-
 plugin_modules = load_plugins(PLUGIN_DIR)
 plugins = []
 for plugin in plugin_modules:
@@ -72,15 +68,10 @@ for plugin in plugins:
         flattened_plugins.append(plugin)
 plugins = flattened_plugins
 
-print('plugins: ', plugins)
-
-plugin_dict = {plugin.__name__: plugin for plugin in plugins}
-
+# print('plugins: ', plugins)
 class AskIt():
-    def __init__(self,prompt=None):
-        # super().__init__()
-        openai_api_key = os.getenv('OPENAI_API_KEY')
-        # print('openai_api_key:', openai_api_key)        
+    def __init__(self,system_prompt=None):
+        openai_api_key = os.getenv('OPENAI_API_KEY')      
         self.client = AsyncOpenAI(api_key=openai_api_key)
         self.name = 'OpenAI'
         self.initial_prompt = {
@@ -92,12 +83,19 @@ class AskIt():
                     },
                 ],
             }
-        if prompt:
-            self.initial_prompt = prompt
+        if system_prompt:
+            self.initial_prompt = system_prompt
 
         self.tools = plugins
 
-    async def prompt1(self,text):
+    async def prompt1(self,text,moreTools=[],useDefaultTools=True):
+
+        async def gather_strings(stream):
+            result = ''
+            async for chunk in stream:
+                result += chunk
+            return result
+
         messages = []
         messages.append(self.initial_prompt)
         messages.append({
@@ -109,115 +107,134 @@ class AskIt():
                     },
                 ],
             })
-        return await self.prompt(messages)
+        
+        return await gather_strings(self.streamPrompt(messages,moreTools=moreTools,useDefaultTools=useDefaultTools))
 
-    async def prompt(self,messages):
+    async def streamPrompt(self,messages,moreTools=[],useDefaultTools=True):
+        def tool_list_to_tool_calls(tools):
+            # Initialize a dictionary with default values
+            tool_calls_dict = defaultdict(lambda: {"id": None, "function": {"arguments": "", "name": None}, "type": None})
+
+            # Iterate over the tool calls
+            for tool_call in tools:
+                # If the id is not None, set it
+                if tool_call.id is not None:
+                    tool_calls_dict[tool_call.index]["id"] = tool_call.id
+
+                # If the function name is not None, set it
+                if tool_call.function.name is not None:
+                    tool_calls_dict[tool_call.index]["function"]["name"] = tool_call.function.name
+
+                # Append the arguments
+                tool_calls_dict[tool_call.index]["function"]["arguments"] += tool_call.function.arguments
+
+                # If the type is not None, set it
+                if tool_call.type is not None:
+                    tool_calls_dict[tool_call.index]["type"] = tool_call.type
+
+            # Convert the dictionary to a list
+            tool_calls_list = list(tool_calls_dict.values())
+
+            # Return the result
+            return tool_calls_list
+
         msgs = messages.copy()
-        tool_schemas = [schema(tool) for tool in self.tools]      
 
-        start = datetime.now()
-        response = await self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
-            messages=msgs,
-            tools=tool_schemas,
-        )
-        log.debug('Time for LLM Response: %d', (datetime.now()-start).total_seconds())
+        localtools = []
+        if useDefaultTools and self.tools:
+            localtools.extend(self.tools)
+        if moreTools:
+            localtools.extend(moreTools)
+        tool_schemas = [schema(tool) for tool in localtools]      
 
-        response_message = response.choices[0].message
-        tool_calls = response_message.tool_calls
-        if tool_calls:
-            # Step 3: call the function
-            # Note: the JSON response may not always be valid; be sure to handle errors
-            available_functions = plugin_dict
-
-            # available_functions = {
-            #     "get_current_weather": get_current_weather,
-            #     "get_current_time": get_current_time,
-            # }  # only one function in this example, but you can have multiple
-            #messages.append(response_message)  # extend conversation with assistant's reply
-            # print('xx:', response_message)
-            # print('yy:', response_message.__dict__)
-            #await appendMessage(response_message)
-            msgs.append(response_message)
-            # Step 4: send the info for each function call and function response to the model
-            for tool_call in tool_calls:
-                # print("Calling tools")
-                function_name = tool_call.function.name
-                function_to_call = available_functions[function_name]
-                # print('function to call:', function_to_call)
-                function_args = json.loads(tool_call.function.arguments)
-                function_response = await function_to_call(
-                    # location=function_args.get("location"),
-                    # unit=function_args.get("unit"),
-                    **function_args
-                )
-                # if function_response:
-                msgs.append(
-                    {
-                        "tool_call_id": tool_call.id,
-                        "role": "tool",
-                        "name": function_name,
-                        "content": f'{function_response}',
-                        "text": f"Calling {function_name}"
-                    }                
-                )
-            start = datetime.now()
-            # TODO better model?
+        # start = datetime.now()
+        max_tool_calls = 1
+        for i in range(max_tool_calls+1):
+            allow_tool_calls = i < max_tool_calls
             response = await self.client.chat.completions.create(
                 model="gpt-4-1106-preview",
                 messages=msgs,
-            )  # get a new response from the model where it can see the function response
-            # print('second call response:', response)
-            log.debug('Time for llm tool processing: %d', (datetime.now()-start).total_seconds())
-            response_message = response.choices[0].message
-        # await self.appendMessage({
-        #     "role": "assistant",
-        #     "content": [
-        #         {
-        #             "type": "text",
-        #             "text": response_message.content
-        #         },
-        #     ],
-        # })
-        return response_message.content
+                tools=tool_schemas if allow_tool_calls else None,
+                stream=True,
+            )
+
+            reply=""
+            tools=[]
+            async for chunk in response:
+                if chunk.choices[0].delta.content:
+                    reply += chunk.choices[0].delta.content        # gather for chat history
+                    yield chunk.choices[0].delta.content           # your output method
+                if chunk.choices[0].delta.tool_calls:
+                    tools += chunk.choices[0].delta.tool_calls     # gather ChoiceDeltaToolCall list chunks
+
+            tool_calls = tool_list_to_tool_calls(tools)
+
+            if not tool_calls:
+                return
+            else:
+                # Thar be tool calls
+                # Note: the JSON response may not always be valid; be sure to handle errors
+
+                available_functions = {tool.__name__: tool for tool in localtools}
+
+                msgs.append({
+                    "role": "assistant",
+                    "tool_calls": [{
+                        "id": tool_call['id'], 
+                        "function": {
+                            "name": tool_call['function']['name'], 
+                            "arguments": tool_call['function']['arguments']
+                        },
+                        "type": "function"
+                    } for tool_call in tool_calls]
+                })
+
+                for tool_call in tool_calls:
+                    function_name = tool_call['function']['name']
+                    function_to_call = available_functions[function_name]
+                    function_args = tool_call['function']['arguments']
+                    function_args = json.loads(function_args)
+
+                    function_response = await function_to_call(
+                        **function_args
+                    )
+
+                    msgs.append(
+                        {
+                            "tool_call_id": tool_call['id'],
+                            "role": "tool",
+                            "name": function_name,
+                            "content": f'{function_response}',
+                            "text": f"Calling {function_name}"
+                        }                
+                    )
+
+async def get_current_location():
+    """
+    Get your current location
+
+    Returns:
+        str: Your current location.
+
+    """
+    return 'Chantilly, VA 20152'
 
 def main():
+    import aiofiles
+    import sys
+
     load_dotenv(".env.local")
 
-    # askit = AskIt([get_current_weather,get_current_time])
     askit = AskIt()
-
-    # async def test(prompt):
-    #     print(prompt)    
-    #     print(await askit.prompt(prompt))
-
-    # async def tests():
-        # await test("What is the weather in Tokyo?")
-        # await test("What is the weather in San Francisco?")
-        # await test("What is the time?")
-        # await test("Tesla stock price")
-        # await test("$NVDA")
-        # await test("Get the webpage at this URL: https://www.allrecipes.com/recipe/139183/scrumptious-sauerkraut-balls/")
-        # await test("Search the web for Elon Musk.")
-        # await test("How old is Elon Musk?")
-
-    # asyncio.run(tests())
-
-    import aiofiles
-
-    # if __name__ == '__main__':
-    #     load_dotenv(".env.local")
-
-    #     askit = AskIt(plugins)
-
-    async def test(prompt):
-        print(prompt)
-        print(await askit.prompt1(prompt))
 
     async def read_lines():
         async with aiofiles.open('/dev/stdin', mode='r') as f:
-            async for line in f:
-                await test(line.strip())
+            print("> ", end="")
+            sys.stdout.flush()
+            async for line in f:    
+                print(await askit.prompt1(line.strip(), moreTools=[get_current_location]))
+                print("> ", end="")
+                sys.stdout.flush()
 
     asyncio.run(read_lines())
 
