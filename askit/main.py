@@ -198,9 +198,12 @@ class AskIt():
                     function_args = tool_call['function']['arguments']
                     function_args = json.loads(function_args)
 
-                    function_response = await function_to_call(
-                        **function_args
-                    )
+                    try:
+                        function_response = await function_to_call(
+                            **function_args
+                        )
+                    except Exception as e:
+                        function_response = f"Error: {e}"
 
                     msgs.append(
                         {
