@@ -70,7 +70,7 @@ plugins = flattened_plugins
 
 # print('plugins: ', plugins)
 class AskIt():
-    def __init__(self,system_prompt=None):
+    def __init__(self,system_prompt=None,model="gpt-4o-mini"):
         openai_api_key = os.getenv('OPENAI_API_KEY')      
         self.client = AsyncOpenAI(api_key=openai_api_key)
         self.name = 'OpenAI'
@@ -85,6 +85,8 @@ class AskIt():
             }
         if system_prompt:
             self.initial_prompt = system_prompt
+
+        self.model = model
 
         self.tools = plugins
 
@@ -152,7 +154,8 @@ class AskIt():
         for i in range(max_tool_calls+1):
             allow_tool_calls = i < max_tool_calls
             response = await self.client.chat.completions.create(
-                model="gpt-4-1106-preview",
+                # model="gpt-4-1106-preview",
+                model=self.model,
                 messages=msgs,
                 tools=tool_schemas if allow_tool_calls else None,
                 stream=True,
