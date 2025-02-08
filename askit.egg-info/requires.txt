@@ -4,3 +4,4 @@ openai
 smolagents
 markdownify
 duckduckgo-search
+termcolor

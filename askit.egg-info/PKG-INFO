@@ -12,5 +12,10 @@ Requires-Dist: openai
 Requires-Dist: smolagents
 Requires-Dist: markdownify
 Requires-Dist: duckduckgo-search
+Requires-Dist: termcolor
 
-blah
+repackage with 
+
+```
+python setup.py sdist bdist_wheel
+```

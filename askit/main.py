@@ -42,7 +42,7 @@ def load_plugins(plugin_dir):
     for file in os.listdir(plugin_dir):
         if file.endswith(".py") and file != "__init__.py":
             module_name = f"askit.plugins.{file[:-3]}"
-            print('module_name:', module_name)
+            logging.info('module_name: %s', module_name)
             module = importlib.import_module(module_name)
             if hasattr(module, "register"):
                 plugins.append(module)
@@ -225,18 +225,20 @@ async def get_current_location():
 def main():
     import aiofiles
     import sys
+    from termcolor import colored
 
     load_dotenv(".env.local")
 
     askit = AskIt()
+    print(colored(f'askit using model: {askit.model}', 'cyan'))
 
     async def read_lines():
         async with aiofiles.open('/dev/stdin', mode='r') as f:
-            print("> ", end="")
+            print(colored("> ","yellow"), end="")
             sys.stdout.flush()
             async for line in f:    
-                print(await askit.prompt1(line.strip(), moreTools=[get_current_location]))
-                print("> ", end="")
+                print(colored(await askit.prompt1(line.strip(), moreTools=[get_current_location]),"green"))
+                print(colored("> ","yellow"), end="")
                 sys.stdout.flush()
 
     asyncio.run(read_lines())

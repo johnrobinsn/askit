@@ -11,6 +11,7 @@ setup(
         'smolagents',
         'markdownify',
         'duckduckgo-search',
+        'termcolor'
     ],
     entry_points={
         'console_scripts': [
