@@ -14,6 +14,7 @@
 
 import os
 import importlib
+import argparse
 
 from datetime import datetime
 
@@ -68,18 +69,28 @@ for plugin in plugins:
         flattened_plugins.append(plugin)
 plugins = flattened_plugins
 
+
+defaultSystemPrompt = '''
+You are a helpful assistant to another assistent.  The other assistant does not have access to current information, but you do.  
+You can help the other assistant by providing information that it can't access.  You can provide information by calling a function that will get the information for you.  
+The function will return the information to the other assistant.  The other assistant will then use the information to help the user.  
+If you don't know how to obtain the requested information simply state that you don't know how to help with that and nothing more. 
+Please be direct and to the point when answering questions or executing commands.
+'''
+
 # print('plugins: ', plugins)
 class AskIt():
-    def __init__(self,system_prompt=None,model="gpt-4o-mini"):
-        openai_api_key = os.getenv('OPENAI_API_KEY')      
-        self.client = AsyncOpenAI(api_key=openai_api_key)
+    def __init__(self,system_prompt=None,model="gpt-4o-mini",api_key=None,base_url=None):
+        if not api_key:
+            api_key = os.getenv('OPENAI_API_KEY')      
+        self.client = AsyncOpenAI(api_key=api_key,base_url=base_url)
         self.name = 'OpenAI'
         self.initial_prompt = {
                 "role": "system",
                 "content": [
                     {
                         "type": "text",
-                        "text": f"You are a helpful assistant to another assistent.  The other assistant does not have access to current information, but you do.  You can help the other assistant by providing information that it can't access.  You can provide information by calling a function that will get the information for you.  The function will return the information to the other assistant.  The other assistant will then use the information to help the user.  If you don't know how to obtain the requested information simply state that you don't know how to help with that and nothing more. Please be direct and to the point when answering questions or executing commands."
+                        "text": defaultSystemPrompt.strip()
                     },
                 ],
             }
@@ -232,7 +243,17 @@ def main():
 
     load_dotenv(".env.local")
 
-    askit = AskIt()
+    parser = argparse.ArgumentParser(description='AskIt command line interface')
+    parser.add_argument('--api_key', type=str, help='API key')
+    parser.add_argument('--base_url', type=str, help='Base URL')
+    parser.add_argument('--model', type=str, help='Model to use')
+    args = parser.parse_args()
+
+    api_key = args.api_key
+    base_url = args.base_url
+    model = args.model
+
+    askit = AskIt(api_key=api_key,base_url=base_url, model=args.model)
     print(colored(f'askit using model: {askit.model}', 'cyan'))
 
     async def read_lines():
