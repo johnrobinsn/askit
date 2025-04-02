@@ -80,7 +80,7 @@ Please be direct and to the point when answering questions or executing commands
 
 # print('plugins: ', plugins)
 class AskIt():
-    def __init__(self,system_prompt=None,model="gpt-4o-mini",api_key=None,base_url=None):
+    def __init__(self,system_prompt=None,model=None,api_key=None,base_url=None):
         if not api_key:
             api_key = os.getenv('OPENAI_API_KEY')      
         self.client = AsyncOpenAI(api_key=api_key,base_url=base_url)
@@ -97,7 +97,7 @@ class AskIt():
         if system_prompt:
             self.initial_prompt = system_prompt
 
-        self.model = model
+        self.model = model if model else "gpt-4o-mini"
 
         self.tools = plugins
 
