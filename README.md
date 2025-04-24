@@ -3,3 +3,20 @@ repackage with
 ```
 python setup.py sdist bdist_wheel
 ```
+
+askit is a MCP client library that allows you to connect an LLM to any configured mcp server.
+
+It also supports pythonic function calling as well making it easy to connect external tools through MCP while letting your application or llm wrapper easily add in python functions for your llm to access.
+
+Currently it supports the following llm models
+
+* openai api compatible models (including grok)
+* anthropic
+
+support [json5](https://json5.org/), "JSON for Humans" formatting of the mcp_config.json file which allows for javascript-style single-line and multiline comments and trailing commas, unquoted keys etc.
+
+Example MCP Servers for trying things out.
+
+mcp-sse https://github.com/sidharthrajaram/mcp-sse
+
+python -m askit --model="grok-2-latest" --base_url="https://api.x.ai/v1" --api_key="xai-U0TL9iJv4jWrwWc0hCIagjFdw5zpyFATzzSZPrDIDpzKhwBPETtshBBMiWqkmZUYgtcQaMNYWWO874cJ"

@@ -1,0 +1,26 @@
+{
+    "mcpServers": {
+      // "dolphin-demo-database-sqlite": {
+      //   "command": "uvx",
+      //   "args": [
+      //     "mcp-server-sqlite",
+      //     "--db-path",
+      //     "~/.dolphin/dolphin.db"
+      //   ],
+      //   "blah": "blah"
+      // },
+      // "weather": {
+      //   "url": "http://localhost:8088/sse"
+      // },
+      "home-assistant": {
+        "command" : "node",
+        "cwd" : "/home/jr/code/mcpcalc",
+        "args": [
+          "home2.mjs"
+        ],
+        "env": {
+          "debug_log": "false"
+        }
+      }      
+    }
+}
