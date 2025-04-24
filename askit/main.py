@@ -93,8 +93,7 @@ class AskIt():
     def __init__(self,system_prompt=None,model=None,api_key=None,base_url=None):
         if not api_key:
             api_key = os.getenv('OPENAI_API_KEY')
-
-        print(f"api_key: {api_key}")      
+     
         self.client = AsyncOpenAI(api_key=api_key,base_url=base_url)
         self.name = 'OpenAI'
         self.initial_prompt = {
@@ -363,8 +362,9 @@ async def get_current_location():
 
 def main():
     from termcolor import colored
+    from pathlib import Path
 
-    load_dotenv(override=True)
+    load_dotenv(override=True,dotenv_path=Path.cwd() / ".env")
 
     parser = argparse.ArgumentParser(description='AskIt command line interface')
     parser.add_argument('--api_key', type=str, help='API key')
