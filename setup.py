@@ -5,13 +5,12 @@ setup(
     version='0.1',
     packages=find_packages(include=['askit', 'askit.*']),
     install_requires=[
-        'aiohttp',
         'python-dotenv',
         'openai',
-        'smolagents',
-        'markdownify',
-        'duckduckgo-search',
         'termcolor'
+        'mcp[cli]',
+        'prompt_toolkit',
+        'json5'
     ],
     entry_points={
         'console_scripts': [

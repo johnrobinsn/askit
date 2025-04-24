@@ -1,7 +1,5 @@
-aiohttp
 python-dotenv
 openai
-smolagents
-markdownify
-duckduckgo-search
-termcolor
+termcolormcp[cli]
+prompt_toolkit
+json5

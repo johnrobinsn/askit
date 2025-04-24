@@ -6,13 +6,11 @@ Author: John Robinson
 Author-email: johnrobinsn@gmail.com
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
-Requires-Dist: aiohttp
 Requires-Dist: python-dotenv
 Requires-Dist: openai
-Requires-Dist: smolagents
-Requires-Dist: markdownify
-Requires-Dist: duckduckgo-search
-Requires-Dist: termcolor
+Requires-Dist: termcolormcp[cli]
+Requires-Dist: prompt_toolkit
+Requires-Dist: json5
 
 repackage with 
 
