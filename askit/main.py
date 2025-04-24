@@ -92,7 +92,9 @@ class MCPClient():
 class AskIt():
     def __init__(self,system_prompt=None,model=None,api_key=None,base_url=None):
         if not api_key:
-            api_key = os.getenv('OPENAI_API_KEY')      
+            api_key = os.getenv('OPENAI_API_KEY')
+
+        print(f"api_key: {api_key}")      
         self.client = AsyncOpenAI(api_key=api_key,base_url=base_url)
         self.name = 'OpenAI'
         self.initial_prompt = {
