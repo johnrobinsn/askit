@@ -2,6 +2,7 @@ README.md
 setup.py
 askit/__init__.py
 askit/__main__.py
+askit/main copy.py
 askit/main.py
 askit.egg-info/PKG-INFO
 askit.egg-info/SOURCES.txt
