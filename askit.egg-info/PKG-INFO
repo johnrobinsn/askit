@@ -8,7 +8,8 @@ Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 Requires-Dist: python-dotenv
 Requires-Dist: openai
-Requires-Dist: termcolormcp[cli]
+Requires-Dist: termcolor
+Requires-Dist: mcp[cli]
 Requires-Dist: prompt_toolkit
 Requires-Dist: json5
 

@@ -7,7 +7,7 @@ setup(
     install_requires=[
         'python-dotenv',
         'openai',
-        'termcolor'
+        'termcolor',
         'mcp[cli]',
         'prompt_toolkit',
         'json5'
