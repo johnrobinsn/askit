@@ -222,15 +222,16 @@ class AskIt():
         if len(messages) == 0:
             messages.append(self.initial_prompt)
 
-        messages.append({
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": text
-                    },
-                ],
-            })
+        if text:
+            messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": text
+                        },
+                    ],
+                })
 
         msgs = messages
 
