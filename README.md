@@ -1,22 +1,156 @@
-repackage with 
 
+
+# AskIt MCP
+AskIt is a flexible asyncio Python library and CLI tool that allows various LLM models to call functions and services from [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) servers and locally-defined python functions.
+
+## Features
+* Simple and Lightweight
+* Connect to multiple MCP servers simultaneously
+* Support for Tool Use/Function Calling with MCP Servers Written in any Language
+* Support for Tool Use/Function Calling with locally-defined Python Functions
+* Supports Multiple LLM Providers
+    * OpenAI and XAI (Grok) currently supported
+    * Anthropic, Ollama, and LMStudio support __coming soon__
+* Optional Support for Streaming Responses
+* Securely Store API Keys in Environment Variables
+
+## Installation
+To get started with AskIt MCP, you need to have Python 3.8+ installed on your system. A python version manager is recommended. You can then install the package using pip:
+
+```bash
+pip install git+https://github.com/johnrobinsn/askit.git
 ```
-python setup.py sdist bdist_wheel
+
+## Getting Started with the CLI
+The easiest way to get started with AskIt is to use its integrated command-line interface (CLI) tool. The CLI allows you to interact with MCP servers and LLMs using natural language queries, making it easy to access and manipulate data from various sources.
+
+The following command will leverage the default OpenAI model (gpt-4o-mini) to answer your questions. You can specify a different model or provider using command-line options.  
+
+You just need to provide your OpenAI API key as a command line argument.
+
+``` bash
+python -m askit --api_key="your_openai_api_key_here"
 ```
 
-askit is a MCP client library that allows you to connect an LLM to any configured mcp server.
+You can also provide the key as a provider specific environment variable.
 
-It also supports pythonic function calling as well making it easy to connect external tools through MCP while letting your application or llm wrapper easily add in python functions for your llm to access.
+```bash
+OPENAI_API_KEY="your_openai_api_key_here" python -m askit
+```
 
-Currently it supports the following llm models
+Here is an eample using the XAI provider (Grok) with a specific model. You will need to provide your XAI API key as an environment variable or command line argument.
 
-* openai api compatible models (including grok)
-* anthropic
+```bash
+python -m askit --model="grok-2-latest" --provider="XAI" --api_key="your_xai_api_key_here"
+```
 
-support [json5](https://json5.org/), "JSON for Humans" formatting of the mcp_config.json file which allows for javascript-style single-line and multiline comments and trailing commas, unquoted keys etc.
+## Configuring MCP Servers
+You can configure the MCP servers that AskIt will connect to by creating a `mcp_config.json` file in your current working directory. This file should contain a JSON object with the following structure:
 
-Example MCP Servers for trying things out.
+```json
+{
+    "mcpServers": {
+      "weather": {
+        "url": "http://localhost:8088/sse"
+      },
+      "home-assistant": {
+        "command" : "node",
+        "cwd" : "/home/jr/code/mcpcalc",
+        "args": [
+          "home2.mjs"
+        ],
+        "env": {
+          "debug_log": "false"
+        }
+      }      
+    }
+}
+```
 
-mcp-sse https://github.com/sidharthrajaram/mcp-sse
+Once you have created this file, the AskIt CLI will automatically load the configuration and connect to the specified MCP servers. You can also specify a different configuration file using the `--config` command-line argument.
 
-python -m askit --model="grok-2-latest" --base_url="https://api.x.ai/v1" --api_key="xai-U0TL9iJv4jWrwWc0hCIagjFdw5zpyFATzzSZPrDIDpzKhwBPETtshBBMiWqkmZUYgtcQaMNYWWO874cJ"
+
+## Getting started with the API
+
+You can also use AskIt as a Python library in your own applications. Here is a simple example of how to use it programmatically:
+
+```python
+import asyncio
+from askit import AskIt
+
+async def main():
+    # assume OPENAI_API_KEY is set in your environment variables
+    # or you can pass it as an argument to AskIt
+
+    async with AskIt() as askit:
+        response = await askit.prompt("Who is Neil Armstrong?")
+        print(f'Response: {response}')
+
+asyncio.run(main())
+```
+
+## Getting Started with Function Calling
+
+With AskIt, It's easy to give your LLM access to custom functions that you write.  Just define your functions and pass them in using the tools argument to the prompt method.  The LLM will then be able to call your functions as needed.  In this quick example, we define a function that returns the current time and makes it available to the configured LLM.  The LLM can then call this function to get the current time.  You can pass in any number of functions, and the LLM will be able to call them as needed.
+
+```python
+from datetime import datetime
+import asyncio
+from askit import AskIt
+
+async def main():
+    async with AskIt() as askit:
+        # Define a custom function
+        async def get_current_time():
+            """
+            Get the current date and time
+
+            Returns:
+                str: The current time in YYYY-MM-DD HH:MM:SS format
+
+            """
+            return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Call the function using the LLM
+        response = await askit.prompt("What time is it?", tools=[get_current_time])
+        print(f'Response: {response}')
+
+asyncio.run(main())
+```
+
+## Additional Examples
+
+You can find additional examples in the `examples` directory of the repository. These examples demonstrate how to use AskIt MCP with different LLM providers and how to define and use custom functions.
+
+## Environment Variables
+AskIt MCP uses environment variables to securely store API keys and configuration settings. 
+
+ASKIT_SYSTEM_PROMPT - Optionally configure a default system prompt for AskIt
+ASKIT_PROVIDER - Optionally configure a default provider for AskIt ["OPENAI", "XAI"], defaults to "OPENAI"
+
+### Provider Specific Environment Variables
+
+OPENAI_API_KEY - Specify your_openai_api_key_here for the OpenAI provider
+OPENAI_BASE_URL - Optionally configure a different base URL for the OpenAI provider
+OPENAI_MODEL - Optionally configure a different model for the OpenAI provider, defaults to "gpt-4o-mini"
+
+XAI_API_KEY - Specify your_xai_api_key_here for the XAI provider
+XAI_BASE_URL - Optionally configure a different base URL for the XAI provider
+XAI_MODEL - Optionally configure a different model for the XAI provider, defaults to "grok-3-latest"
+
+## API
+
+TODO
+
+## Requirements
+
+- Python 3.8+
+- OpenAI API key (or other supported provider API keys)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+Apache License 2.0

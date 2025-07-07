@@ -1,50 +1,47 @@
 ## TODO
--[X] add argument to Askit to specify config file path.  by default looks for mcp_config.json in current working directory.
--[X] prompt1 and naming
--[X] Catch exceptions
--[X] Support for plugins that need to run in the background (websockets, timers, alarms)
--[ ] add an example stdio server
--[ ] add an example sse server or at least test with one
--[ ] add a better function example
--[X] can I turn on and and off lights without quoting on/off
--[X] try to get list all lights to work
--[X] ability to specify max tool calls per turn
--[X] add support for sse
--[X] do I need to filter out extra keys from config...
--[X] remove sleep... 
--[X] make sure dolphin-mcp is not using other mcp features... resources etc
--[ ] try updated askit inside neo  (I need a way to call askit cleanup)
--[X] quiet vs non-quiet from dolphin-mcp
--[X] history on askit chat in memory
--[ ] add reasonable debug, warn, error logging
--[ ] clean up pass
--[X] try grok
--[ ] fix system prompt. probably move to config.
--[ ] look at dolphin-mcp pull request for fixing system prompt.
--[X] improve error handling if sse server is not available
--[X] improve error reporting if stdio server is not available.
--[X] log mcp servers available.
--[ ] load mcp tools on prompt?  should I do in factory method?
--[ ] remove sample local tools and put them in an example.
--[ ] fix up .env file
--[ ] .env file location?
--[ ] ability to pass in mcp config location?
--[ ] blog article
+- [X] add argument to Askit to specify config file path.  by default looks for mcp_config.json in current working directory.
+- [X] Catch exceptions
+- [X] Support for plugins that need to run in the background (websockets, timers, alarms)
+- [ ] add an example stdio server
+- [ ] add an example sse server or at least test with one
+- [X] can I turn on and and off lights without quoting on/off
+- [X] try to get list all lights to work
+- [X] ability to specify max tool calls per turn
+- [X] add support for sse
+- [X] do I need to filter out extra keys from config...
+- [X] remove sleep... 
+- [X] make sure dolphin-mcp is not using other mcp features... resources etc
+- [X] quiet vs non-quiet from dolphin-mcp
+- [X] history on askit chat in memory
+- [ ] add reasonable debug, warn, error logging
+- [ ] clean up pass
+- [X] try grok
+- [X] fix system prompt. probably move to config.
+- [ ] look at dolphin-mcp pull request for fixing system prompt.
+- [X] improve error handling if sse server is not availablepip 
+- [X] improve error reporting if stdio server is not available.
+- [X] log mcp servers available.
+- [X] remove sample local tools and put them in an example.
+- [X] fix up .env file
+- [ ] .env file location?
+- [X] ability to pass in mcp config location?
+- [ ] blog article
+- [ ] unit tests/evals
 
 
-## Futures-[ ] look to see if I can improve schemas coming from MCP servers
--[ ] how are prompts and resources used by claude?  how should they be exposed?  does claude api have support for resources and prompts from its "embedding" api
--[ ] async context managers frought with issues. shutdown order... 
--[ ] anthropic
--[ ] ollama
--[ ] Sandbox eval
--[ ] can I eat stderror from mcp-servers
--[ ] add support for other llms and ollama function calling
--[ ] prompts
--[ ] resources
--[ ] sampling message
--[ ] progress/working notification
--[ ] make sure that mcp servers work... mcp servers that have websockets etc... should block on their reponses til they have what they need... or give an error back...   still waiting on connection
--[ ] Long running task (browser use...) notifications when done... 
--[ ] look to see if I can improve schemas coming from MCP servers
--[ ] add provider switch for different apis
+## Futures- [ ] look to see if I can improve schemas coming from MCP servers
+- [ ] how are prompts and resources used by claude?  how should they be exposed?  does claude api have support for resources and prompts from its "embedding" api
+- [X] async context managers frought with issues. shutdown order... 
+- [ ] anthropic
+- [ ] ollama
+- [ ] Sandbox eval
+- [ ] can I eat stderror from mcp-servers
+- [ ] add support for other llms and ollama function calling
+- [ ] prompts
+- [ ] resources
+- [ ] sampling message
+- [ ] progress/working notification
+- [ ] make sure that mcp servers work... mcp servers that have websockets etc... should block on their reponses til they have what they need... or give an error back...   still waiting on connection
+- [ ] Long running task (browser use...) notifications when done... 
+- [ ] look to see if I can improve schemas coming from MCP servers
+- [ ] add provider switch for different apis

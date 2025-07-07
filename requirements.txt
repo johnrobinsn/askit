@@ -1,6 +1,6 @@
 python-dotenv
-openai
 termcolor
-mcp[cli]
-prompt_toolkit
 json5
+prompt_toolkit
+mcp[cli]
+openai

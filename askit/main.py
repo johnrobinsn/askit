@@ -1,4 +1,4 @@
-# Copyright 2024 John Robinson
+# Copyright 2025 John Robinson
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,13 @@
 
 import os
 import argparse
-from functools import partial
+from dotenv import load_dotenv
 
-from datetime import datetime
+import asyncio
+
+import logging
+
+from functools import partial
 
 import inspect,json
 import json5 # used for config file only
@@ -24,16 +28,11 @@ from collections import defaultdict
 from inspect import Parameter
 from pydantic import create_model
 
-from dotenv import load_dotenv
-
-import asyncio
 from openai import AsyncOpenAI
 
 from mcp import ClientSession, StdioServerParameters, types
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
-
-import logging
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logging.getLogger("mcp").setLevel(logging.CRITICAL)
@@ -47,14 +46,11 @@ def schema(f):
     s = create_model(f'Input for `{f.__name__}`', **kw).model_json_schema()
     return dict(type='function',function=dict(name=f.__name__, description=f.__doc__, parameters=s))
 
-defaultSystemPrompt = '''
-You are a helpful assistant to another assistent.  The other assistant does not have access to current information, but you do.  
-You can help the other assistant by providing information that it can't access.  You can provide information by calling a function that will get the information for you.  
-The function will return the information to the other assistant.  The other assistant will then use the information to help the user.  
-If you don't know how to obtain the requested information simply state that you don't know how to help with that and nothing more. 
-Please be direct and to the point when answering questions or executing commands.
-'''
-
+# This class helps manage the nested async context managers for the MCP client.
+# It handles the streams context and the session context, allowing for clean startup and shutdown of the
+# MCP client connection.
+# The unfortunate design choice of the MCP client library forces us to manually shut down the streams and 
+# session contexts via the stop() method prior to exiting the asyncio loop.
 class MCPClient():
     def __init__(self):
         self._streams_context = None
@@ -89,26 +85,44 @@ class MCPClient():
         if self._streams_context:
             await self._streams_context.__aexit__(None, None, None)
         self._session = None
-class AskIt():
-    def __init__(self,system_prompt=None,model=None,api_key=None,base_url=None):
-        if not api_key:
-            api_key = os.getenv('OPENAI_API_KEY')
-     
-        self.client = AsyncOpenAI(api_key=api_key,base_url=base_url)
-        self.name = 'OpenAI'
-        self.initial_prompt = {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": defaultSystemPrompt.strip()
-                    },
-                ],
-            }
-        if system_prompt:
-            self.initial_prompt = system_prompt
 
-        self.model = model if model else "gpt-4o-mini"
+class AskIt():
+    provider_defaults = {
+        'OPENAI': {
+            'base_url': None,  # for OPENAI just tunnel this through to the openai api impl
+            'model': "gpt-4o-mini"
+        },
+        'XAI': {
+            'base_url': "https://api.x.ai/v1",
+            'model': "grok-3-latest"
+        }
+    }
+
+    def __init__(self,system_prompt=None,model=None,api_key=None,base_url=None,provider=None):
+        if not provider:
+            provider = os.getenv('ASKIT_PROVIDER', 'OPENAI').upper()
+
+        if provider not in ['OPENAI', 'XAI']:
+            log.warning(f"Unsupported provider: {provider}. Defaulting to OPENAI.")
+            provider = 'OPENAI'
+
+        if not api_key:
+            api_key = os.getenv(f'{provider}_API_KEY')
+        if not base_url:
+            base_url = os.getenv(f'{provider}_BASE_URL', AskIt.provider_defaults[provider]['base_url'])
+        if not model:
+            model = os.getenv(f'{provider}_MODEL', AskIt.provider_defaults[provider]['model'])
+        if not system_prompt:
+            system_prompt = os.getenv('ASKIT_SYSTEM_PROMPT', None)
+
+        if not api_key:
+            raise ValueError(f"API key for {provider} is required. Please set the {provider}_API_KEY environment variable or pass in api_key as an argument.")
+        
+        self.client = AsyncOpenAI(api_key=api_key,base_url=base_url)
+        
+        self.base_url = base_url
+        self.model = model
+        self.system_prompt = system_prompt
         
         self.mcp_schemas = []
         self.mcp_funcs = {}
@@ -124,11 +138,23 @@ class AskIt():
             await client.stop()
         self.mcp_clients = []
 
+    async def __aenter__(self):
+        """
+        Asynchronous context manager entry point.
+        """
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """
+        Asynchronous context manager exit point.
+        """
+        await self.stop()        
+
     def get_mcp_tool_names(self):
         return [client.server_name for client in self.mcp_clients]
 
     async def load_mcp_config(self, mcp_config_file='mcp_config.json'):
-        await self.stop()
+        # await self.stop()
         try:
             with open(mcp_config_file, "r") as f:
                 try:
@@ -161,14 +187,25 @@ class AskIt():
                     except Exception as e:
                         log.error(f"mcp server: {server_name}; {e}")
         except FileNotFoundError:
-            log.error(f"{mcp_config_file} not found.  Please create a config file.")
+            log.warning(f"{mcp_config_file} not found.  Please create a config file.")
             return False
         except Exception as e:
             log.error(f"Error loading {mcp_config_file}: {e}")
             return False
         return True
 
-    async def prompt(self,text,moreTools=[],messages=[],max_tool_calls=3):
+    async def prompt(self,text,tools=[],messages=[],max_tool_calls=3,stream=False):
+        """
+        Prompt the model with the given text and return the response as a string or a generator that streams the response.
+        If stream is True, the response will be streamed.
+        If stream is False, the response will be returned as a string.
+        """
+        if stream:
+            return self._streamResponse(text,tools=tools,messages=messages,max_tool_calls=max_tool_calls)
+        else:
+            return await self._getResponse(text,tools=tools,messages=messages,max_tool_calls=max_tool_calls)
+
+    async def _getResponse(self,text,tools=[],messages=[],max_tool_calls=3):
         """
         Prompt the model with the given text and return the response as a string.
         """
@@ -178,15 +215,21 @@ class AskIt():
             async for chunk in stream:
                 result += chunk
             return result
-        
-        return await gather_strings(self.promptStream(text,moreTools=moreTools,messages=messages,max_tool_calls=max_tool_calls))
 
-    async def promptStream(self,text,moreTools=[],messages=[],max_tool_calls=3):
+        return await gather_strings(self._streamResponse(text,tools=tools,messages=messages,max_tool_calls=max_tool_calls))
+
+    async def _streamResponse(self,text,tools=[],messages=[],max_tool_calls=3):
         """
         Prompt the model with the given text and return a generator 
         that streams the response.
         """
         
+        # async def gather_strings(stream):
+        #     result = ''
+        #     async for chunk in stream:
+        #         result += chunk
+        #     return result
+
         # await self.load_mcp_tools()
 
         def tool_list_to_tool_calls(tools):
@@ -219,8 +262,16 @@ class AskIt():
         if text == '':
             return
 
-        if len(messages) == 0:
-            messages.append(self.initial_prompt)
+        if len(messages) == 0 and self.system_prompt:
+            messages.append({
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": self.system_prompt.strip()
+                        },
+                    ],
+                })
 
         if text:
             messages.append({
@@ -236,7 +287,7 @@ class AskIt():
         msgs = messages
 
         tool_schemas = self.mcp_schemas.copy()
-        tool_schemas.extend([schema(tool) for tool in moreTools])
+        tool_schemas.extend([schema(tool) for tool in tools])
 
         for i in range(max_tool_calls+1):
             allow_tool_calls = i < max_tool_calls
@@ -249,13 +300,13 @@ class AskIt():
             )
 
             reply=""
-            tools=[]
+            _tools=[]
             async for chunk in response:
                 if chunk.choices[0].delta.content:
                     reply += chunk.choices[0].delta.content        # gather for chat history
                     yield chunk.choices[0].delta.content           # your output method
                 if chunk.choices[0].delta.tool_calls:
-                    tools += chunk.choices[0].delta.tool_calls     # gather ChoiceDeltaToolCall list chunks
+                    _tools += chunk.choices[0].delta.tool_calls     # gather ChoiceDeltaToolCall list chunks
 
             messages.append({
                     "role": "assistant",
@@ -267,7 +318,7 @@ class AskIt():
                     ],
                 })
 
-            tool_calls = tool_list_to_tool_calls(tools)
+            tool_calls = tool_list_to_tool_calls(_tools)
 
             if not tool_calls:
                 return
@@ -276,7 +327,7 @@ class AskIt():
                 # Note: the JSON response may not always be valid; be sure to handle errors
 
                 available_functions = self.mcp_funcs.copy()
-                more_functions = {tool.__name__: tool for tool in moreTools}
+                more_functions = {tool.__name__: tool for tool in tools}
                 available_functions.update(more_functions)
 
                 msgs.append({
@@ -319,49 +370,8 @@ class AskIt():
                         }                
                     )
 
-import aiohttp
-async def fetch_stock_price(ticker_symbol:str):
-    """
-    Takes the ticket symbol for a given stock and returns the current stock price in USD.
 
-    Returns:
-        float: The current price of the stock
-    """
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_symbol}"
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; AskIt/1.0)'}) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    current_price = data['chart']['result'][0]['meta']['regularMarketPrice']
-                    return current_price
-                else:
-                    return f"Failed to fetch data: {response.status}"
-    except Exception as e:
-        return f"An error occurred: {e}"
-
-async def get_current_time():
-    """
-    Get the current date and time
-
-    Returns:
-        str: The current time in HH:MM:SS format
-
-    """
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
-async def get_current_location():
-    """
-    Get your current location
-
-    Returns:
-        str: Your current location.
-
-    """
-    return 'Chantilly, VA 20152'
-
-def main():
+async def main():
     from termcolor import colored
     from pathlib import Path
 
@@ -371,39 +381,40 @@ def main():
     parser.add_argument('--api_key', type=str, help='API key')
     parser.add_argument('--base_url', type=str, help='Base URL')
     parser.add_argument('--model', type=str, help='Model to use')
+    parser.add_argument('--provider', type=str, default='OPENAI', help='LLM provider (default: OPENAI)')
     args = parser.parse_args()
 
     api_key = args.api_key
     base_url = args.base_url
     model = args.model
-
-    askit = AskIt(api_key=api_key,base_url=base_url, model=args.model)
-    print(colored(f'askit using model: {askit.model}', 'cyan'))
+    provider = args.provider
 
     from prompt_toolkit import PromptSession
     
     async def read_lines():
         messages = []
-        tools = [fetch_stock_price, get_current_time, get_current_location]
 
-        await askit.load_mcp_config()
-        print(colored(f'askit using mcp tools: {askit.get_mcp_tool_names()}', 'cyan'))
+        # askit = AskIt(api_key=api_key,base_url=base_url, model=model)
+        async with AskIt(api_key=api_key, base_url=base_url, model=model, provider=provider) as askit:
+            print(colored(f'askit using model: {askit.model}', 'cyan'))
+            await askit.load_mcp_config()
+            print(colored(f'askit using mcp tools: {askit.get_mcp_tool_names()}', 'cyan'))
 
-        session = PromptSession("> ")
-        # In-memory history is maintained by prompt_toolkit automatically
-        while True:
-            try:
-                line = await session.prompt_async("> ")
-            except (EOFError, KeyboardInterrupt):
-                break
-            response = await askit.prompt(line.strip(), moreTools=tools, messages=messages)
-            if response: print(colored(response, "green"))
+            session = PromptSession("> ")
+            # In-memory history is maintained by prompt_toolkit automatically
+            while True:
+                try:
+                    line = await session.prompt_async("> ")
+                except (EOFError, KeyboardInterrupt):
+                    break
+                response = await askit.prompt(line.strip(), messages=messages)
+                if response: print(colored(response, "green"))
 
         print("shutting down")
-        await askit.stop()
+        # await askit.stop()
 
-    asyncio.run(read_lines())
+    await read_lines()
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

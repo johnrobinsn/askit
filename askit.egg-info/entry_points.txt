@@ -1,0 +1,2 @@
+[console_scripts]
+get_current_weather = askit.main:main
