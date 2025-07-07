@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: askit
 Version: 0.1
 Summary: A module to ask any one question and get an answer.
@@ -13,34 +13,40 @@ Requires-Dist: termcolor
 Requires-Dist: mcp[cli]
 Requires-Dist: prompt_toolkit
 Requires-Dist: json5
+Dynamic: author
+Dynamic: author-email
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 
 
 # AskIt MCP
-
-A flexible asyncio Python library and CLI tool for interacting with Model Context Protocol (MCP) servers and locally-defined python functions using any LLM model.
+AskIt is a flexible asyncio Python library and CLI tool that allows various LLM models to call functions and services from [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) servers and locally-defined python functions.
 
 ## Features
 * Simple and Lightweight
-* Supports Multiple LLM Providers
-    * OpenAI and XAI (Grok) currently supported
-    * Anthropic, Ollama, and LMStudio support coming soon
+* Connect to multiple MCP servers simultaneously
 * Support for Tool Use/Function Calling with MCP Servers Written in any Language
 * Support for Tool Use/Function Calling with locally-defined Python Functions
+* Supports Multiple LLM Providers
+    * OpenAI and XAI (Grok) currently supported
+    * Anthropic, Ollama, and LMStudio support __coming soon__
 * Optional Support for Streaming Responses
 * Securely Store API Keys in Environment Variables
 
-
 ## Installation
-To get started with AskIt MCP, you need to have Python 3.8+ installed on your system. A python version manager like uv is recommended. You can then install the package using pip:
+To get started with AskIt MCP, you need to have Python 3.8+ installed on your system. A python version manager is recommended. You can then install the package using pip:
 
 ```bash
 pip install git+https://github.com/johnrobinsn/askit.git
 ```
 
 ## Getting Started with the CLI
-
-The easiest way to get started with AskIt MCP is to use the command-line interface (CLI) tool. The CLI allows you to interact with MCP servers and LLMs using natural language queries, making it easy to access and manipulate data from various sources.
+The easiest way to get started with AskIt is to use its integrated command-line interface (CLI) tool. The CLI allows you to interact with MCP servers and LLMs using natural language queries, making it easy to access and manipulate data from various sources.
 
 The following command will leverage the default OpenAI model (gpt-4o-mini) to answer your questions. You can specify a different model or provider using command-line options.  
 
@@ -53,7 +59,7 @@ python -m askit --api_key="your_openai_api_key_here"
 You can also provide the key as a provider specific environment variable.
 
 ```bash
-OPENAI_API_KEY="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"python -m askit
+OPENAI_API_KEY="your_openai_api_key_here" python -m askit
 ```
 
 Here is an eample using the XAI provider (Grok) with a specific model. You will need to provide your XAI API key as an environment variable or command line argument.
@@ -62,13 +68,38 @@ Here is an eample using the XAI provider (Grok) with a specific model. You will 
 python -m askit --model="grok-2-latest" --provider="XAI" --api_key="your_xai_api_key_here"
 ```
 
+## Configuring MCP Servers
+You can configure the MCP servers that AskIt will connect to by creating a `mcp_config.json` file in your current working directory. This file should contain a JSON object with the following structure:
+
+```json
+{
+    "mcpServers": {
+      "weather": {
+        "url": "http://localhost:8088/sse"
+      },
+      "home-assistant": {
+        "command" : "node",
+        "cwd" : "/home/jr/code/mcpcalc",
+        "args": [
+          "home2.mjs"
+        ],
+        "env": {
+          "debug_log": "false"
+        }
+      }      
+    }
+}
+```
+
+Once you have created this file, the AskIt CLI will automatically load the configuration and connect to the specified MCP servers. You can also specify a different configuration file using the `--config` command-line argument.
+
+
 ## Getting started with the API
 
-You can also use AskIt MCP as a Python library in your own applications. Here is a simple example of how to use it programmatically:
+You can also use AskIt as a Python library in your own applications. Here is a simple example of how to use it programmatically:
 
 ```python
 import asyncio
-
 from askit import AskIt
 
 async def main():
@@ -82,6 +113,35 @@ async def main():
 asyncio.run(main())
 ```
 
+## Getting Started with Function Calling
+
+With AskIt, It's easy to give your LLM access to custom functions that you write.  Just define your functions and pass them in using the tools argument to the prompt method.  The LLM will then be able to call your functions as needed.  In this quick example, we define a function that returns the current time and makes it available to the configured LLM.  The LLM can then call this function to get the current time.  You can pass in any number of functions, and the LLM will be able to call them as needed.
+
+```python
+from datetime import datetime
+import asyncio
+from askit import AskIt
+
+async def main():
+    async with AskIt() as askit:
+        # Define a custom function
+        async def get_current_time():
+            """
+            Get the current date and time
+
+            Returns:
+                str: The current time in YYYY-MM-DD HH:MM:SS format
+
+            """
+            return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Call the function using the LLM
+        response = await askit.prompt("What time is it?", tools=[get_current_time])
+        print(f'Response: {response}')
+
+asyncio.run(main())
+```
+
 ## Additional Examples
 
 You can find additional examples in the `examples` directory of the repository. These examples demonstrate how to use AskIt MCP with different LLM providers and how to define and use custom functions.
@@ -89,346 +149,27 @@ You can find additional examples in the `examples` directory of the repository. 
 ## Environment Variables
 AskIt MCP uses environment variables to securely store API keys and configuration settings. 
 
-# Optionally configure a default system prompt for AskIt
-# Use """ for multiline prompts
-ASKIT_SYSTEM_PROMPT="You are a swarthy pirate named Ahab." 
-
+ASKIT_SYSTEM_PROMPT - Optionally configure a default system prompt for AskIt
+ASKIT_PROVIDER - Optionally configure a default provider for AskIt ["OPENAI", "XAI"], defaults to "OPENAI"
 
 ### Provider Specific Environment Variables
 
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY - Specify your_openai_api_key_here for the OpenAI provider
+OPENAI_BASE_URL - Optionally configure a different base URL for the OpenAI provider
+OPENAI_MODEL - Optionally configure a different model for the OpenAI provider, defaults to "gpt-4o-mini"
 
-# Optionally configure a different base URL for OpenAI
-# Available models can be found here: https://platform.openai.com/docs/models
-# Defaults to "gpt-4o-mini"
-OPENAI_BASE_URL=  
+XAI_API_KEY - Specify your_xai_api_key_here for the XAI provider
+XAI_BASE_URL - Optionally configure a different base URL for the XAI provider
+XAI_MODEL - Optionally configure a different model for the XAI provider, defaults to "grok-3-latest"
 
-# Optionally configure a different model for OpenAI
+## API
 
-OPENAI_MODEL=          
-
-XAI_API_KEY=your_xai_api_key_here
-
-# Optionally configure a different base URL for XAI
-XAI_BASE_URL=https://api.x.ai/v1  
-
-# Optionally configure a different model for XAI
-# Available models can be found here: https://docs.x.ai/docs/models
-# Defaults to "grok-3-latest"
-XAI_MODEL=grok-2-latest           
-
-# Optionally configure a default provider for AskIt, e.g., 'OPENAI' or 'XAI', 'OPENAI' is the default
-ASKIT_PROVIDER=XAI 
-
-
-
-Create a `.env
-
-support [json5](https://json5.org/), "JSON for Humans" formatting of the mcp_config.json file which allows for javascript-style single-line and multiline comments and trailing commas, unquoted keys etc.
-
-Example MCP Servers for trying things out.
-
-mcp-sse https://github.com/sidharthrajaram/mcp-sse
-
-
-
-
-
-mcp allows you to connect your LLM to any configured mcp server.  It makes it fairly easy to connect to external mcp servers running on your local machine or over the network and also make it easy to connect to mcp servers that are written in other programming languages.
-
-
-![image](https://github.com/user-attachments/assets/d0ee1159-2a8f-454d-8fba-cf692f425af9)
-
-## Overview
-
-Dolphin MCP is both a Python library and a command-line tool that allows you to query and interact with MCP servers through natural language. It connects to any number of configured MCP servers, makes their tools available to language models (OpenAI, Anthropic, Ollama, LMStudio), and provides a conversational interface for accessing and manipulating data from these servers.
-
-The project demonstrates how to:
-- Connect to multiple MCP servers simultaneously
-- List and call tools provided by these servers
-- Use function calling capabilities to interact with external data sources
-- Process and present results in a user-friendly way
-- Create a reusable Python library with a clean API
-- Build a command-line interface on top of the library
-
-## Features
-
-- **Multiple Provider Support**: Works with OpenAI, Anthropic, Ollama, and LMStudio models
-- **Modular Architecture**: Clean separation of concerns with provider-specific modules
-- **Dual Interface**: Use as a Python library or command-line tool
-- **MCP Server Integration**: Connect to any number of MCP servers simultaneously
-- **Tool Discovery**: Automatically discover and use tools provided by MCP servers
-- **Flexible Configuration**: Configure models and servers through JSON configuration
-- **Environment Variable Support**: Securely store API keys in environment variables
-- **Comprehensive Documentation**: Detailed usage examples and API documentation
-- **Installable Package**: Easy installation via pip with `dolphin-mcp-cli` command
-
-## Prerequisites
-
-Before installing Dolphin MCP, ensure you have the following prerequisites installed:
-
-1. **Python 3.8+**
-2. **SQLite** - A lightweight database used by the demo
-3. **uv/uvx** - A fast Python package installer and resolver
-
-### Setting up Prerequisites
-
-#### Windows
-
-1. **Python 3.8+**:
-   - Download and install from [python.org](https://www.python.org/downloads/windows/)
-   - Ensure you check "Add Python to PATH" during installation
-
-2. **SQLite**:
-   - Download the precompiled binaries from [SQLite website](https://www.sqlite.org/download.html)
-   - Choose the "Precompiled Binaries for Windows" section and download the sqlite-tools zip file
-   - Extract the files to a folder (e.g., `C:\sqlite`)
-   - Add this folder to your PATH:
-     - Open Control Panel > System > Advanced System Settings > Environment Variables
-     - Edit the PATH variable and add the path to your SQLite folder
-     - Verify installation by opening Command Prompt and typing `sqlite3 --version`
-
-3. **uv/uvx**:
-   - Open PowerShell as Administrator and run:
-     ```
-     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-     ```
-   - Restart your terminal and verify installation with `uv --version`
-
-#### macOS
-
-1. **Python 3.8+**:
-   - Install using Homebrew:
-     ```
-     brew install python
-     ```
-
-2. **SQLite**:
-   - SQLite comes pre-installed on macOS, but you can update it using Homebrew:
-     ```
-     brew install sqlite
-     ```
-   - Verify installation with `sqlite3 --version`
-
-3. **uv/uvx**:
-   - Install using Homebrew:
-     ```
-     brew install uv
-     ```
-   - Or use the official installer:
-     ```
-     curl -LsSf https://astral.sh/uv/install.sh | sh
-     ```
-   - Verify installation with `uv --version`
-
-#### Linux (Ubuntu/Debian)
-
-1. **Python 3.8+**:
-   ```
-   sudo apt update
-   sudo apt install python3 python3-pip
-   ```
-
-2. **SQLite**:
-   ```
-   sudo apt update
-   sudo apt install sqlite3
-   ```
-   - Verify installation with `sqlite3 --version`
-
-3. **uv/uvx**:
-   ```
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
-   - Verify installation with `uv --version`
-
-## Installation
-
-### Option 1: Install from PyPI (Recommended)
-
-```bash
-pip install dolphin-mcp
-```
-
-This will install both the library and the `dolphin-mcp-cli` command-line tool.
-
-### Option 2: Install from Source
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/cognitivecomputations/dolphin-mcp.git
-   cd dolphin-mcp
-   ```
-
-2. Install the package in development mode:
-   ```bash
-   pip install -e .
-   ```
-
-3. Set up your environment variables by copying the example file and adding your OpenAI API key:
-   ```bash
-   cp .env.example .env
-   ```
-   Then edit the `.env` file to add your OpenAI API key.
-
-4. (Optional) Set up the demo dolphin database:
-   ```bash
-   python setup_db.py
-   ```
-   This creates a sample SQLite database with dolphin information that you can use to test the system.
-
-## Configuration
-
-The project uses two main configuration files:
-
-1. `.env` - Contains OpenAI API configuration:
-   ```
-   OPENAI_API_KEY=your_openai_api_key_here
-   OPENAI_MODEL=gpt-4o
-   # OPENAI_BASE_URL=https://api.openai.com/v1  # Uncomment and modify if using a custom base url
-   ```
-
-2. `mcp_config.json` - Defines MCP servers to connect to:
-   ```json
-   {
-     "mcpServers": {
-       "server1": {
-         "command": "command-to-start-server",
-         "args": ["arg1", "arg2"],
-         "env": {
-           "ENV_VAR1": "value1",
-           "ENV_VAR2": "value2"
-         }
-       },
-       "server2": {
-         "command": "another-server-command",
-         "args": ["--option", "value"]
-       }
-     }
-   }
-   ```
-
-   You can add as many MCP servers as you need, and the client will connect to all of them and make their tools available.
-
-## Usage
-
-### Using the CLI Command
-
-Run the CLI command with your query as an argument:
-
-```bash
-dolphin-mcp-cli "Your query here"
-```
-
-### Command-line Options
-
-```
-Usage: dolphin-mcp-cli [--model <name>] [--quiet] [--config <file>] 'your question'
-
-Options:
-  --model <name>    Specify the model to use
-  --quiet           Suppress intermediate output
-  --config <file>   Specify a custom config file (default: mcp_config.json)
-  --help, -h        Show this help message
-```
-
-### Using the Library Programmatically
-
-You can also use Dolphin MCP as a library in your Python code:
-
-```python
-import asyncio
-from dolphin_mcp import run_interaction
-
-async def main():
-    result = await run_interaction(
-        user_query="What dolphin species are endangered?",
-        model_name="gpt-4o",  # Optional, will use default from config if not specified
-        config_path="mcp_config.json",  # Optional, defaults to mcp_config.json
-        quiet_mode=False  # Optional, defaults to False
-    )
-    print(result)
-
-# Run the async function
-asyncio.run(main())
-```
-
-### Using the Original Script (Legacy)
-
-You can still run the original script directly:
-
-```bash
-python dolphin_mcp.py "Your query here"
-```
-
-The tool will:
-1. Connect to all configured MCP servers
-2. List available tools from each server
-3. Call the language model API with your query and the available tools
-4. Execute any tool calls requested by the model
-5. Return the results in a conversational format
-
-## Example Queries
-
-Examples will depend on the MCP servers you have configured. With the demo dolphin database:
-
-```bash
-dolphin-mcp-cli "What dolphin species are endangered?"
-```
-
-Or with your own custom MCP servers:
-
-```bash
-dolphin-mcp-cli "Query relevant to your configured servers"
-```
-
-You can also specify a model to use:
-
-```bash
-dolphin-mcp-cli --model gpt-4o "What are the evolutionary relationships between dolphin species?"
-```
-
-To use the LMStudio provider:
-
-```bash
-dolphin-mcp-cli --model qwen2.5-7b "What are the evolutionary relationships between dolphin species?"
-```
-
-For quieter output (suppressing intermediate results):
-
-```bash
-dolphin-mcp-cli --quiet "List all dolphin species in the Atlantic Ocean"
-```
-
-## Demo Database
-
-If you run `setup_db.py`, it will create a sample SQLite database with information about dolphin species. This is provided as a demonstration of how the system works with a simple MCP server. The database includes:
-
-- Information about various dolphin species
-- Evolutionary relationships between species
-- Conservation status and physical characteristics
-
-This is just one example of what you can do with the Dolphin MCP client. You can connect it to any MCP server that provides tools for accessing different types of data or services.
+TODO
 
 ## Requirements
 
 - Python 3.8+
 - OpenAI API key (or other supported provider API keys)
-
-### Core Dependencies
-- openai
-- mcp[cli]
-- python-dotenv
-- anthropic
-- ollama
-- lmstudio
-- jsonschema
-
-### Development Dependencies
-- pytest
-- pytest-asyncio
-- pytest-mock
-- uv
 
 ## Contributing
 
@@ -437,10 +178,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 Apache License 2.0
-
-
-repackage with 
-
-```
-python setup.py sdist bdist_wheel
-```
