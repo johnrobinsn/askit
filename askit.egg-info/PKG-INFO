@@ -1,4 +1,4 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: askit
 Version: 0.1
 Summary: A module to ask any one question and get an answer.
@@ -13,14 +13,6 @@ Requires-Dist: termcolor
 Requires-Dist: mcp[cli]
 Requires-Dist: prompt_toolkit
 Requires-Dist: json5
-Dynamic: author
-Dynamic: author-email
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: license-file
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
 
 
 

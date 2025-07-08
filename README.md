@@ -15,11 +15,43 @@ AskIt is a flexible asyncio Python library and CLI tool that allows various LLM 
 * Securely Store API Keys in Environment Variables
 
 ## Installation
-To get started with AskIt MCP, you need to have Python 3.8+ installed on your system. A python version manager is recommended. You can then install the package using pip:
+To get started with AskIt MCP, you need to have Python 3.11+ installed on your system. A python version manager is recommended. You can then install the package using pip:
 
 ```bash
 pip install git+https://github.com/johnrobinsn/askit.git
 ```
+
+## Configuration
+The project uses two main configuration files:
+
+.env - Contains LLM API configuration and is loaded automatically by the AskIt CLI:
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o
+# OPENAI_BASE_URL=https://api.openai.com/v1  # Uncomment and modify if using a custom base url
+```
+
+mcp_config.json - Defines MCP servers to connect to:
+```json
+{
+  "mcpServers": {
+    "server1": {
+      "command": "command-to-start-server",
+      "args": ["arg1", "arg2"],
+      "env": {
+        "ENV_VAR1": "value1",
+        "ENV_VAR2": "value2"
+      }
+    },
+    "server2": {
+      "command": "another-server-command",
+      "args": ["--option", "value"]
+    }
+  }
+}
+```
+
+You can add as many MCP servers as you need, and the client will connect to all of them and make their tools available.
 
 ## Getting Started with the CLI
 The easiest way to get started with AskIt is to use its integrated command-line interface (CLI) tool. The CLI allows you to interact with MCP servers and LLMs using natural language queries, making it easy to access and manipulate data from various sources.
@@ -144,7 +176,7 @@ TODO
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.11+
 - OpenAI API key (or other supported provider API keys)
 
 ## Contributing
