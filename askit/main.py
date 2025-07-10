@@ -33,6 +33,7 @@ from openai import AsyncOpenAI
 from mcp import ClientSession, StdioServerParameters, types
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logging.getLogger("mcp").setLevel(logging.CRITICAL)
@@ -60,17 +61,24 @@ class MCPClient():
     async def start(self,server_name,**kwargs):
         try:
             self.server_name = server_name
-            if 'url' not in kwargs:
+            transport = kwargs.get('transport', 'sse' if 'url' in kwargs else 'stdio')
+
+            if transport == 'stdio':
                 log.debug('setting up stdio client %s', kwargs)
                 server_params = StdioServerParameters(**kwargs)                
                 self._streams_context = stdio_client(server_params)
-            else:
+            elif transport == 'sse':
                 log.debug('setting up sse client %s', kwargs)
                 self._streams_context = sse_client(**kwargs)
+            elif transport == 'http':                
+                log.debug('setting up http client %s', kwargs)
+                # Note: MCP client library does not support HTTP transport yet.
+                self._streams_context = streamablehttp_client(**kwargs)
 
             streams = await self._streams_context.__aenter__()
 
-            self._session_context = ClientSession(*streams)
+            # streams is a tuple of (read_stream, write_stream, *)
+            self._session_context = ClientSession(streams[0],streams[1])
             self._session = await self._session_context.__aenter__()
             await self._session.initialize()
         except Exception as e:
