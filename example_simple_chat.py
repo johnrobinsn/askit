@@ -91,16 +91,11 @@ async def main():
     parser.add_argument('--provider', type=str, default='OPENAI', help='LLM provider (default: OPENAI)')
     args = parser.parse_args()
 
-    api_key = args.api_key if args.api_key is not None else None
-    base_url = args.base_url if args.base_url is not None else None
-    model = args.model if args.model is not None else None
-    provider = args.provider
-
     from prompt_toolkit import PromptSession
     
     async def read_lines():
 
-        async with AskIt(api_key=api_key, base_url=base_url, model=model, provider=provider) as askit:
+        async with AskIt(api_key=args.api_key, base_url=args.base_url, model=args.model, provider=args.provider) as askit:
 
             print(colored(f'askit using model: {askit.model}', 'cyan'))
 

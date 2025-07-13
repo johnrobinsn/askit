@@ -61,19 +61,20 @@ class MCPClient():
     async def start(self,server_name,**kwargs):
         try:
             self.server_name = server_name
-            transport = kwargs.get('transport', 'sse' if 'url' in kwargs else 'stdio')
+            transport = kwargs.get('transport', 'http' if 'url' in kwargs else 'stdio')
+            kwargs_no_transport = {k: v for k, v in kwargs.items() if k not in ['transport','disabled']}
 
             if transport == 'stdio':
                 log.debug('setting up stdio client %s', kwargs)
-                server_params = StdioServerParameters(**kwargs)                
+                server_params = StdioServerParameters(**kwargs_no_transport)                
                 self._streams_context = stdio_client(server_params)
             elif transport == 'sse':
                 log.debug('setting up sse client %s', kwargs)
-                self._streams_context = sse_client(**kwargs)
+                self._streams_context = sse_client(**kwargs_no_transport)
             elif transport == 'http':                
                 log.debug('setting up http client %s', kwargs)
                 # Note: MCP client library does not support HTTP transport yet.
-                self._streams_context = streamablehttp_client(**kwargs)
+                self._streams_context = streamablehttp_client(**kwargs_no_transport)
 
             streams = await self._streams_context.__aenter__()
 
@@ -82,7 +83,7 @@ class MCPClient():
             self._session = await self._session_context.__aenter__()
             await self._session.initialize()
         except Exception as e:
-            raise Exception(f"Error connecting to server.  Confirm config and availability.")
+            raise Exception(f"Error connecting to server.  Confirm config and availability. {e}")
 
     def get_session(self):
         return self._session          
@@ -102,7 +103,7 @@ class AskIt():
         },
         'XAI': {
             'base_url': "https://api.x.ai/v1",
-            'model': "grok-3-latest"
+            'model': "grok-4-latest"
         }
     }
 
@@ -172,6 +173,9 @@ class AskIt():
                     return False
                 
                 for server_name, server_config in mcp_config['mcpServers'].items():
+                    if 'disabled' in server_config and server_config['disabled']:
+                        log.warning(f"Skipping disabled MCP server: {server_name}")
+                        continue
                     try:
                         log.debug(f"Configure mcpServer; key: {server_name}, value: {server_config}")
                         client = MCPClient()
@@ -378,7 +382,6 @@ class AskIt():
                         }                
                     )
 
-
 async def main():
     from termcolor import colored
     from pathlib import Path
@@ -392,18 +395,13 @@ async def main():
     parser.add_argument('--provider', type=str, default='OPENAI', help='LLM provider (default: OPENAI)')
     args = parser.parse_args()
 
-    api_key = args.api_key
-    base_url = args.base_url
-    model = args.model
-    provider = args.provider
-
     from prompt_toolkit import PromptSession
     
     async def read_lines():
         messages = []
 
         # askit = AskIt(api_key=api_key,base_url=base_url, model=model)
-        async with AskIt(api_key=api_key, base_url=base_url, model=model, provider=provider) as askit:
+        async with AskIt(api_key=args.api_key, base_url=args.base_url, model=args.model, provider=args.provider) as askit:
             print(colored(f'askit using model: {askit.model}', 'cyan'))
             await askit.load_mcp_config()
             print(colored(f'askit using mcp tools: {askit.get_mcp_tool_names()}', 'cyan'))

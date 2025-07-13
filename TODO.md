@@ -1,29 +1,5 @@
 ## TODO
-- [X] add argument to Askit to specify config file path.  by default looks for mcp_config.json in current working directory.
-- [X] Catch exceptions
-- [X] Support for plugins that need to run in the background (websockets, timers, alarms)
-- [ ] add an example stdio server
-- [ ] add an example sse server or at least test with one
-- [X] can I turn on and and off lights without quoting on/off
-- [X] try to get list all lights to work
-- [X] ability to specify max tool calls per turn
-- [X] add support for sse
-- [X] do I need to filter out extra keys from config...
-- [X] remove sleep... 
-- [X] make sure dolphin-mcp is not using other mcp features... resources etc
-- [X] quiet vs non-quiet from dolphin-mcp
-- [X] history on askit chat in memory
-- [ ] add reasonable debug, warn, error logging
-- [ ] clean up pass
-- [X] try grok
-- [X] fix system prompt. probably move to config.
-- [ ] look at dolphin-mcp pull request for fixing system prompt.
-- [X] improve error handling if sse server is not availablepip 
-- [X] improve error reporting if stdio server is not available.
-- [X] log mcp servers available.
-- [X] remove sample local tools and put them in an example.
-- [X] fix up .env file
-- [ ] .env file location?
-- [X] ability to pass in mcp config location?
-- [ ] blog article
-- [ ] unit tests/evals
+-[ ] Support for Antropic
+-[ ] Support for Ollama
+-[ ] Support for LMStudio
+-[ ] Add Evals

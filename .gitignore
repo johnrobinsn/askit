@@ -1,6 +1,7 @@
 __pycache__
 .env
+mcp_config.json
 build/
 sort/
-blah*
 *.bk
+
