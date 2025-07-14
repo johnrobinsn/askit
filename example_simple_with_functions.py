@@ -75,6 +75,20 @@ async def get_current_location():
     """
     return 'Chantilly, VA 20152'
 
+
+def sum(a: int, b: int) -> int:
+    """
+    Add two numbers
+
+    Args:
+        a (int): The first number
+        b (int): The second number
+
+    Returns:
+        int: The sum of the two numbers
+    """
+    return a + b
+
 async def main():
     load_dotenv(override=True,dotenv_path=Path.cwd() / ".env")
 
@@ -106,17 +120,22 @@ async def main():
         prompt = "Where am I?"
         print(f'Asking: {prompt}')
 
-        # Send the prompt to the AskIt instance and get the response providing the 
-        # get_current_time function as a tool.
-        response = await askit.prompt(prompt, tools=[get_current_time, get_current_location, fetch_stock_price])        
+        # Send the prompt to the AskIt instance and get the response
+        response = await askit.prompt(prompt, tools=[get_current_time, get_current_location, fetch_stock_price, sum])        
         print(f'Response: {response}')    
 
         prompt = "What is the stock price of Tesla?"
         print(f'Asking: {prompt}')
 
-        # Send the prompt to the AskIt instance and get the response providing the 
-        # get_current_time function as a tool.
-        response = await askit.prompt(prompt, tools=[get_current_time, get_current_location, fetch_stock_price])        
+        # Send the prompt to the AskIt instance and get the response
+        response = await askit.prompt(prompt, tools=[get_current_time, get_current_location, fetch_stock_price, sum])        
+        print(f'Response: {response}')    
+
+        prompt = "What is the sum of 2 and 3?"
+        print(f'Asking: {prompt}')
+
+        # Send the prompt to the AskIt instance and get the response
+        response = await askit.prompt(prompt, tools=[get_current_time, get_current_location, fetch_stock_price, sum])        
         print(f'Response: {response}')    
 
 if __name__ == '__main__':

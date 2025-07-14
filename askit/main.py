@@ -364,9 +364,10 @@ class AskIt():
                     log.debug(f"Function call: {function_name} with args: {function_args}")
 
                     try:
-                        function_response = await function_to_call(
-                            **function_args
-                        )
+                        if inspect.iscoroutinefunction(function_to_call):
+                            function_response = await function_to_call(**function_args)
+                        else:
+                            function_response = function_to_call(**function_args)
                     except Exception as e:
                         function_response = f"Error: {e}"
 

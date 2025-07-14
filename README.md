@@ -10,7 +10,7 @@ AskIt is a flexible asyncio Python library and CLI tool that allows various LLM 
 * Support for Tool Use/Function Calling with Locally-Defined Python Functions
 * Supports Multiple LLM Providers
     * OpenAI and XAI (Grok) Currently Supported
-    * Anthropic, Ollama, and LMStudio Support __coming soon__
+    * Anthropic, Ollama, and LMStudio Support __Coming Soon__
 * Optional Support for Streaming LLM Responses
 * Securely Store API Keys in Environment Variables
 
@@ -42,7 +42,7 @@ OPENAI_API_KEY="your_openai_api_key_here" python -m askit
 You can specify a different model or provider using command-line options. Here is an example using the XAI provider (Grok) with a specific model. You will need to provide your XAI API key as an environment variable or command line argument.
 
 ```bash
-python -m askit --model="grok-2-latest" --provider="XAI" --api_key="your_xai_api_key_here"
+python -m askit --model="grok-4-latest" --provider="XAI" --api_key="your_xai_api_key_here"
 ```
 
 Find out more about [Provider Specific Environment Variables](#environment-variables).
@@ -125,7 +125,7 @@ asyncio.run(main())
 ```
 
 ## Function Calling with the API
-With AskIt, It's easy to give your LLM direct access to custom functions that you write (without the hassle of making an MCP server).  Just define your functions in python as shown below and pass them in using the tools argument to the prompt method.  The LLM will then be able to call your functions as needed.  In this quick example, we define a function that returns the current time and makes it available to the configured LLM.  The LLM can then call this function to get the current time.  You can pass in any number of functions, and the LLM will be able to call them as needed.
+With AskIt, It's easy to give your LLM direct access to custom python functions that you write (without the hassle of making an MCP server).  Just define your functions as shown below and pass them in using the tools argument to the prompt method.  The LLM will then be able to call your functions as needed.  In this quick example, we define a function that returns the current time and makes it available to the configured LLM.  The LLM can then call this function to get the current time.  You can pass in any number of functions, and the LLM will be able to call them as needed.
 
 ```python
 from datetime import datetime
@@ -145,13 +145,33 @@ async def main():
             """
             return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        def sum(a: int, b: int) -> int:
+            """
+            Add two numbers
+
+            Args:
+                a (int): The first number
+                b (int): The second number
+
+            Returns:
+                int: The sum of the two numbers
+            """
+            return a + b
+
         # Send the prompt to the AskIt instance, providing the 
         # get_current_time function as a tool.
-        response = await askit.prompt("What time is it?", tools=[get_current_time])
+        response = await askit.prompt("What time is it?", tools=[get_current_time, sum])
         print(f'Response: {response}')
+
+        response = await askit.prompt("What is 2 + 3?", tools=[get_current_time, sum])
+        print(f'Response: {response}')
+
 
 asyncio.run(main())
 ```
+_Please note the type annotations on the functions as well as the docstrings.  These are used by the LLM to understand how to call the function and what it returns._
+
+See `example_simple_with_functions.py`.
 
 ## API Reference
 
