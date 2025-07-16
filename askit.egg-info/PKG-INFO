@@ -172,8 +172,7 @@ async def main():
             Returns:
                 int: The sum of the two numbers
             """
-            return a * b
-
+            return a + b
 
         # Send the prompt to the AskIt instance, providing the 
         # get_current_time function as a tool.
@@ -186,6 +185,9 @@ async def main():
 
 asyncio.run(main())
 ```
+_Please note the type annotations on the functions as well as the docstrings.  These are used by the LLM to understand how to call the function and what it returns._
+
+See `example_simple_with_functions.py`.
 
 ## API Reference
 

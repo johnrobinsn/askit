@@ -211,7 +211,10 @@ class AskIt():
                             def mk_func(call_tool, name):
                                 # closure capturing 'session' and 'name'
                                 async def async_wrapper(**kwargs):
-                                    return await call_tool(name, kwargs)
+                                    if inspect.iscoroutinefunction(call_tool):
+                                        return await call_tool(name, kwargs)
+                                    else:
+                                        return call_tool(name, kwargs)
                                 return async_wrapper
                             self.mcp_funcs[f"{server_name}_{t.name}"] = mk_func(session.call_tool, t.name)
                     except Exception as e:
