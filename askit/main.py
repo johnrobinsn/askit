@@ -186,15 +186,33 @@ class AskIt():
                         tools = await session.list_tools()
                         for t in tools.tools:
                             input_schema = getattr(t,'inputSchema',{"type": "object", "properties": {}})
+                            
+                            # Clean up schema to remove None values that OpenAI doesn't accept
+                            def clean_schema(schema):
+                                if isinstance(schema, dict):
+                                    cleaned = {}
+                                    for key, value in schema.items():
+                                        if value is not None:
+                                            cleaned[key] = clean_schema(value)
+                                    return cleaned
+                                elif isinstance(schema, list):
+                                    return [clean_schema(item) for item in schema]
+                                else:
+                                    return schema
+                            
+                            cleaned_input_schema = clean_schema(input_schema)
+                            
                             fn_def = {
                             "name": f"{server_name}_{t.name}",
                             "description": getattr(t,'description', '') or '',
-                            "parameters": input_schema
+                            "parameters": cleaned_input_schema
                             }
                             self.mcp_schemas.append({'type': 'function', 'function': fn_def})
                             def mk_func(call_tool, name):
                                 # closure capturing 'session' and 'name'
-                                return lambda **kwargs: partial(call_tool, name)(kwargs)
+                                async def async_wrapper(**kwargs):
+                                    return await call_tool(name, kwargs)
+                                return async_wrapper
                             self.mcp_funcs[f"{server_name}_{t.name}"] = mk_func(session.call_tool, t.name)
                     except Exception as e:
                         log.error(f"mcp server: {server_name}; {e}")
