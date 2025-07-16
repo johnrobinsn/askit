@@ -210,7 +210,9 @@ class AskIt():
                             self.mcp_schemas.append({'type': 'function', 'function': fn_def})
                             def mk_func(call_tool, name):
                                 # closure capturing 'session' and 'name'
-                                return lambda **kwargs: partial(call_tool, name)(kwargs)
+                                async def async_wrapper(**kwargs):
+                                    return await call_tool(name, kwargs)
+                                return async_wrapper
                             self.mcp_funcs[f"{server_name}_{t.name}"] = mk_func(session.call_tool, t.name)
                     except Exception as e:
                         log.error(f"mcp server: {server_name}; {e}")
