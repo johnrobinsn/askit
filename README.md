@@ -1,6 +1,6 @@
 
 
-# AskIt MCP
+# AskIt MCP Client and Library - Apache License 2.0
 AskIt is a flexible asyncio Python library and CLI tool that allows various LLM models to extend their abilities by invoking services from [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) servers and by calling locally-defined Python functions.
 
 ## Features
