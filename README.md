@@ -6,7 +6,7 @@ AskIt is a flexible asyncio Python library and CLI tool that allows various LLM 
 ## Features
 * Simple and Lightweight
 * Connect to multiple MCP servers simultaneously
-* Supports STDIO, SSE and Streamable HTTP MCP Servers
+* Supports STDIO, SSE and Streamable-HTTP MCP Servers
 * Support for Tool Use/Function Calling with MCP Servers Written in any Language
 * Support for Tool Use/Function Calling with Locally-Defined Python Functions
 * Supports Multiple LLM Providers
