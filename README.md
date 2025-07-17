@@ -6,6 +6,7 @@ AskIt is a flexible asyncio Python library and CLI tool that allows various LLM 
 ## Features
 * Simple and Lightweight
 * Connect to multiple MCP servers simultaneously
+* Supports STDIO, SSE and Streamable HTTP MCP Servers
 * Support for Tool Use/Function Calling with MCP Servers Written in any Language
 * Support for Tool Use/Function Calling with Locally-Defined Python Functions
 * Supports Multiple LLM Providers
@@ -13,7 +14,6 @@ AskIt is a flexible asyncio Python library and CLI tool that allows various LLM 
     * Anthropic, Ollama, and LMStudio Support __Coming Soon__
 * Optional Support for Streaming LLM Responses
 * Securely Store API Keys in Environment Variables
-* Supports STDIO, SSE and Streamable HTTP MCP Servers
 
 ## Installation
 To get started with AskIt MCP, you need to have Python 3.11+ installed on your system. A python version manager is recommended. You can then install the package using pip:
